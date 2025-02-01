@@ -1,0 +1,128 @@
+blueprint:
+  name: "Ajf_defi"
+  description: "Automatisation améliorée pour les défis Hilo, permettant un contrôle individuel des thermostats et des appareils."
+  domain: automation
+  input:
+    climate_entities:
+      name: "Thermostats"
+      description: "Liste des thermostats à contrôler."
+      selector:
+        entity:
+          domain: climate
+          multiple: true
+    pre_heat_temps:
+      name: "Températures préchauffage"
+      description: "Températures spécifiques à appliquer lors du préchauffage."
+      default: {}
+    challenge_temps:
+      name: "Températures pendant le défi"
+      description: "Températures spécifiques à appliquer pendant le défi Hilo."
+      default: {}
+    normal_temps:
+      name: "Températures normales"
+      description: "Températures à appliquer après le défi."
+      default: {}
+    water_heater:
+      name: "Chauffe-eau"
+      description: "Entité du chauffe-eau."
+      selector:
+        entity:
+          domain: switch
+          multiple: false
+      default: "switch.chauffe_eau"
+    water_heater_enabled:
+      name: "Activer le chauffe-eau"
+      description: "Détermine si le chauffe-eau doit être contrôlé."
+      default: true
+    other_devices:
+      name: "Autres appareils"
+      description: "Liste des autres appareils à gérer."
+      selector:
+        entity:
+          domain: switch
+          multiple: true
+      default: []
+    other_devices_enabled:
+      name: "Activer autres appareils"
+      description: "Détermine si d'autres appareils doivent être contrôlés."
+      default: false
+
+automation:
+  trigger:
+    - platform: state
+      entity_id: sensor.defi_hilo
+  condition: []
+  action:
+    - choose:
+        - conditions:
+            - condition: state
+              entity_id: sensor.defi_hilo
+              state: pre_heat
+          sequence:
+            - repeat:
+                for_each: "{{ pre_heat_temps }}"
+                sequence:
+                  - service: climate.set_temperature
+                    data:
+                      entity_id: "{{ repeat.item.key }}"
+                      temperature: "{{ repeat.item.value }}"
+            - if:
+                - condition: template
+                  value_template: "{{ water_heater_enabled }}"
+              then:
+                - service: switch.turn_on
+                  target:
+                    entity_id: "{{ water_heater }}"
+            - if:
+                - condition: template
+                  value_template: "{{ other_devices_enabled }}"
+              then:
+                - service: switch.turn_on
+                  target:
+                    entity_id: "{{ other_devices }}"
+
+        - conditions:
+            - condition: state
+              entity_id: sensor.defi_hilo
+              state: reduction
+          sequence:
+            - repeat:
+                for_each: "{{ challenge_temps }}"
+                sequence:
+                  - service: climate.set_temperature
+                    data:
+                      entity_id: "{{ repeat.item.key }}"
+                      temperature: "{{ repeat.item.value }}"
+            - service: switch.turn_off
+              target:
+                entity_id: "{{ water_heater }}"
+            - service: switch.turn_off
+              target:
+                entity_id: "{{ other_devices }}"
+
+        - conditions:
+            - condition: state
+              entity_id: sensor.defi_hilo
+              state: "off"
+          sequence:
+            - repeat:
+                for_each: "{{ normal_temps }}"
+                sequence:
+                  - service: climate.set_temperature
+                    data:
+                      entity_id: "{{ repeat.item.key }}"
+                      temperature: "{{ repeat.item.value }}"
+            - if:
+                - condition: template
+                  value_template: "{{ water_heater_enabled }}"
+              then:
+                - service: switch.turn_on
+                  target:
+                    entity_id: "{{ water_heater }}"
+            - if:
+                - condition: template
+                  value_template: "{{ other_devices_enabled }}"
+              then:
+                - service: switch.turn_on
+                  target:
+                    entity_id: "{{ other_devices }}"
