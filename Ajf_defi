@@ -12,23 +12,33 @@ blueprint:
           multiple: true
     thermostat_temps:
       name: "Températures spécifiques par thermostat"
-      description: "Définir une température spécifique par thermostat. Si vide, utilise les températures générales."
+      description: "Définir une température spécifique par thermostat."
+      selector:
+        object: {}
       default: {}
     thermostat_groups:
       name: "Groupes de thermostats"
       description: "Définir des groupes de thermostats avec leurs températures spécifiques."
+      selector:
+        object: {}
       default: {}
     pre_heat_temps:
       name: "Températures préchauffage"
       description: "Températures spécifiques à appliquer lors du préchauffage."
+      selector:
+        object: {}
       default: {}
     challenge_temps:
       name: "Températures pendant le défi"
       description: "Températures spécifiques à appliquer pendant le défi Hilo."
+      selector:
+        object: {}
       default: {}
     normal_temps:
       name: "Températures normales"
       description: "Températures à appliquer après le défi."
+      selector:
+        object: {}
       default: {}
     water_heater:
       name: "Chauffe-eau"
@@ -36,11 +46,12 @@ blueprint:
       selector:
         entity:
           domain: switch
-          multiple: false
       default: "switch.chauffe_eau"
     water_heater_enabled:
       name: "Activer le chauffe-eau"
       description: "Détermine si le chauffe-eau doit être contrôlé."
+      selector:
+        boolean: {}
       default: true
     other_devices:
       name: "Autres appareils"
@@ -53,6 +64,8 @@ blueprint:
     other_devices_enabled:
       name: "Activer autres appareils"
       description: "Détermine si d'autres appareils doivent être contrôlés."
+      selector:
+        boolean: {}
       default: false
 
 automation:
@@ -73,7 +86,7 @@ automation:
                   - service: climate.set_temperature
                     data:
                       entity_id: "{{ repeat.item }}"
-                      temperature: "{{ thermostat_temps.get(repeat.item, pre_heat_temps.get(repeat.item, normal_temps.get(repeat.item, 21))) }}"
+                      temperature: "{{ thermostat_temps.get(repeat.item, thermostat_groups.get(repeat.item, pre_heat_temps.get(repeat.item, normal_temps.get(repeat.item, 21)))) }}"
             - if:
                 - condition: template
                   value_template: "{{ water_heater_enabled }}"
@@ -100,7 +113,7 @@ automation:
                   - service: climate.set_temperature
                     data:
                       entity_id: "{{ repeat.item }}"
-                      temperature: "{{ thermostat_temps.get(repeat.item, challenge_temps.get(repeat.item, 17)) }}"
+                      temperature: "{{ thermostat_temps.get(repeat.item, thermostat_groups.get(repeat.item, challenge_temps.get(repeat.item, 17))) }}"
             - service: switch.turn_off
               target:
                 entity_id: "{{ water_heater }}"
@@ -119,7 +132,7 @@ automation:
                   - service: climate.set_temperature
                     data:
                       entity_id: "{{ repeat.item }}"
-                      temperature: "{{ thermostat_temps.get(repeat.item, normal_temps.get(repeat.item, 21)) }}"
+                      temperature: "{{ thermostat_temps.get(repeat.item, thermostat_groups.get(repeat.item, normal_temps.get(repeat.item, 21))) }}"
             - if:
                 - condition: template
                   value_template: "{{ water_heater_enabled }}"
@@ -134,4 +147,3 @@ automation:
                 - service: switch.turn_on
                   target:
                     entity_id: "{{ other_devices }}"
-
