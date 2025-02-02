@@ -32,12 +32,42 @@ blueprint:
           domain:
           - climate
           multiple: true
-    thermostat_values:
-      name: "Températures normales par thermostat"
-      description: "Définir une température spécifique pour chaque thermostat sélectionné."
+    thermostat_1:
+      name: "Température normale - Thermostat 1"
+      default: 21
       selector:
-        object: {}
-      default: {}
+        number:
+          min: 15
+          max: 25
+          step: 0.5
+          unit_of_measurement: "°C"
+    thermostat_2:
+      name: "Température normale - Thermostat 2"
+      default: 21
+      selector:
+        number:
+          min: 15
+          max: 25
+          step: 0.5
+          unit_of_measurement: "°C"
+    thermostat_3:
+      name: "Température normale - Thermostat 3"
+      default: 21
+      selector:
+        number:
+          min: 15
+          max: 25
+          step: 0.5
+          unit_of_measurement: "°C"
+    thermostat_4:
+      name: "Température normale - Thermostat 4"
+      default: 21
+      selector:
+        number:
+          min: 15
+          max: 25
+          step: 0.5
+          unit_of_measurement: "°C"
     reference_temp:
       name: "Température de référence (+1°C)"
       default: 1
@@ -124,7 +154,6 @@ triggers:
 variables:
   do_pre_heat: !input do_pre_heat
   thermostats: !input thermostats
-  thermostat_values: !input thermostat_values
   reference_temp: !input reference_temp
   cooling_temp: !input cooling_temp
   appreciation_reference_temp: !input appreciation_reference_temp
@@ -148,7 +177,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_values.get(repeat.item, 21) + preheat_temp }}"
+                    temperature: "{{ thermostat_1 if repeat.index == 1 else thermostat_2 if repeat.index == 2 else thermostat_3 if repeat.index == 3 else thermostat_4 }}"
       - conditions:
           - condition: state
             entity_id: sensor.defi_hilo
@@ -160,30 +189,4 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_values.get(repeat.item, 21) + challenge_temp }}"
-      - conditions:
-          - condition: state
-            entity_id: sensor.defi_hilo
-            state: "off"
-        sequence:
-          - repeat:
-              for_each: "{{ thermostats }}"
-              sequence:
-                - service: climate.set_temperature
-                  data:
-                    entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_values.get(repeat.item, 21) }}"
-          - if:
-              - condition: template
-                value_template: "{{ bool_ref_water_heater }}"
-            then:
-              - service: switch.turn_on
-                target:
-                  entity_id: "{{ water_heater }}"
-          - if:
-              - condition: template
-                value_template: "{{ send_command | length > 0 }}"
-            then:
-              - service: remote.send_command
-                data:
-                  command: "{{ send_command }}"
+                    temperature: "{{ thermostat_1 + challenge_temp if repeat.index == 1 else thermostat_2 + challenge_temp if repeat.index == 2 else thermostat_3 + challenge_temp if repeat.index == 3 else thermostat_4 + challenge_temp }}"
