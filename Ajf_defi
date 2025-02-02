@@ -36,32 +36,65 @@ blueprint:
       name: "Températures normales par thermostat"
       description: "Définir une température normale spécifique par thermostat."
       selector:
-        object: {}
+        entity:
+          domain:
+          - climate
+          multiple: true
       default: {}
     reference_temp:
-      name: "Température de référence"
-      description: "+1°C de la température normale."
-      default: {}
+      name: "Température de référence (+1°C)"
+      default: 1
+      selector:
+        number:
+          min: -5
+          max: 5
+          step: 0.5
+          unit_of_measurement: "°C"
     cooling_temp:
-      name: "Température de refroidissement"
-      description: "-2°C de la température normale."
-      default: {}
+      name: "Température de refroidissement (-2°C)"
+      default: -2
+      selector:
+        number:
+          min: -5
+          max: 5
+          step: 0.5
+          unit_of_measurement: "°C"
     appreciation_reference_temp:
-      name: "Température de la référence d'appréciation"
-      description: "-2°C de la température normale."
-      default: {}
+      name: "Température de la référence d'appréciation (-2°C)"
+      default: -2
+      selector:
+        number:
+          min: -5
+          max: 5
+          step: 0.5
+          unit_of_measurement: "°C"
     appreciation_temp:
-      name: "Température d'appréciation"
-      description: "+2°C de la température normale."
-      default: {}
+      name: "Température d'appréciation (+2°C)"
+      default: 2
+      selector:
+        number:
+          min: -5
+          max: 5
+          step: 0.5
+          unit_of_measurement: "°C"
     preheat_temp:
-      name: "Température de préchauffage"
-      description: "+5°C de la température normale."
-      default: {}
+      name: "Température de préchauffage (+5°C)"
+      default: 5
+      selector:
+        number:
+          min: -5
+          max: 5
+          step: 0.5
+          unit_of_measurement: "°C"
     challenge_temp:
-      name: "Température de défi"
-      description: "-4°C de la température normale."
-      default: {}
+      name: "Température de défi (-4°C)"
+      default: -4
+      selector:
+        number:
+          min: -5
+          max: 5
+          step: 0.5
+          unit_of_measurement: "°C"
     water_heater:
       name: "Chauffe-eau"
       selector:
@@ -87,6 +120,7 @@ blueprint:
       name: "Commande à envoyer (ex: contrôle thermopompe)"
       selector:
         text:
+      default: ""
 triggers:
   - platform: state
     entity_id: sensor.defi_hilo
@@ -117,7 +151,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_temps.get(repeat.item, preheat_temp) }}"
+                    temperature: "{{ thermostat_temps.get(repeat.item, thermostat_temps.get(repeat.item, 21) + preheat_temp) }}"
       - conditions:
           - condition: state
             entity_id: sensor.defi_hilo
@@ -129,7 +163,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_temps.get(repeat.item, challenge_temp) }}"
+                    temperature: "{{ thermostat_temps.get(repeat.item, thermostat_temps.get(repeat.item, 21) + challenge_temp) }}"
       - conditions:
           - condition: state
             entity_id: sensor.defi_hilo
@@ -141,7 +175,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_temps.get(repeat.item, thermostat_temps.get(repeat.item, 21)) }}"
+                    temperature: "{{ thermostat_temps.get(repeat.item, 21) }}"
           - if:
               - condition: template
                 value_template: "{{ bool_ref_water_heater }}"
@@ -151,7 +185,7 @@ action:
                   entity_id: "{{ water_heater }}"
           - if:
               - condition: template
-                value_template: "{{ send_command is not none }}"
+                value_template: "{{ send_command | length > 0 }}"
             then:
               - service: remote.send_command
                 data:
