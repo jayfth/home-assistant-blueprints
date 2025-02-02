@@ -32,20 +32,16 @@ blueprint:
           domain:
           - climate
           multiple: true
-    thermostat_temps:
+    thermostat_values:
       name: "Températures normales par thermostat"
       description: "Définir une température spécifique pour chaque thermostat sélectionné."
       selector:
-        entity:
-          domain: climate
-          multiple: true
-      default: []
-    thermostat_values:
-      name: "Températures personnalisées"
-      description: "Définir une température spécifique pour chaque thermostat."
-      selector:
-        object: {}
-      default: {}
+        number:
+          min: 15
+          max: 25
+          step: 0.5
+          unit_of_measurement: "°C"
+      default: 21
     reference_temp:
       name: "Température de référence (+1°C)"
       default: 1
@@ -156,7 +152,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_values.get(repeat.item, 21) + preheat_temp }}"
+                    temperature: "{{ thermostat_values + preheat_temp }}"
       - conditions:
           - condition: state
             entity_id: sensor.defi_hilo
@@ -168,7 +164,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_values.get(repeat.item, 21) + challenge_temp }}"
+                    temperature: "{{ thermostat_values + challenge_temp }}"
       - conditions:
           - condition: state
             entity_id: sensor.defi_hilo
@@ -180,7 +176,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_values.get(repeat.item, 21) }}"
+                    temperature: "{{ thermostat_values }}"
           - if:
               - condition: template
                 value_template: "{{ bool_ref_water_heater }}"
