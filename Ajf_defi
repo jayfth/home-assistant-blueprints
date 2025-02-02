@@ -1,6 +1,6 @@
 blueprint:
   name: "Ajf_defi"
-  description: "Automatisation avancée pour les défis Hilo avec gestion individuelle des thermostats et des groupes."
+  description: "Automatisation avancée pour les défis Hilo avec gestion individuelle des thermostats et des équipements."
   domain: automation
   input:
     default_challenge_entity:
@@ -12,7 +12,6 @@ blueprint:
           multiple: false
     do_pre_heat:
       name: "Activer le pré-chauffage"
-      description: "Pré-chauffer avant la réduction (équivalent au pré-chauffage de l'appli Hilo)"
       default: true
       selector:
         boolean: {}
@@ -34,41 +33,35 @@ blueprint:
           - climate
           multiple: true
     thermostat_temps:
-      name: "Températures par thermostat"
-      description: "Définir une température spécifique par thermostat."
+      name: "Températures normales par thermostat"
+      description: "Définir une température normale spécifique par thermostat."
       selector:
         object: {}
       default: {}
-    thermostat_groups:
-      name: "Groupes de thermostats"
-      description: "Définir des groupes de thermostats avec leurs températures spécifiques."
-      selector:
-        object: {}
+    reference_temp:
+      name: "Température de référence"
+      description: "+1°C de la température normale."
       default: {}
-    normal_temp:
-      name: "Température normale"
-      default: 21
-      selector:
-        number:
-          min: 15.0
-          max: 25.0
-          unit_of_measurement: "°C"
+    cooling_temp:
+      name: "Température de refroidissement"
+      description: "-2°C de la température normale."
+      default: {}
+    appreciation_reference_temp:
+      name: "Température de la référence d'appréciation"
+      description: "-2°C de la température normale."
+      default: {}
+    appreciation_temp:
+      name: "Température d'appréciation"
+      description: "+2°C de la température normale."
+      default: {}
     preheat_temp:
-      name: "Température de pré-chauffage"
-      default: 23
-      selector:
-        number:
-          min: 15.0
-          max: 25.0
-          unit_of_measurement: "°C"
+      name: "Température de préchauffage"
+      description: "+5°C de la température normale."
+      default: {}
     challenge_temp:
       name: "Température de défi"
-      default: 17
-      selector:
-        number:
-          min: 15.0
-          max: 25.0
-          unit_of_measurement: "°C"
+      description: "-4°C de la température normale."
+      default: {}
     water_heater:
       name: "Chauffe-eau"
       selector:
@@ -82,6 +75,18 @@ blueprint:
       default: false
       selector:
         boolean: {}
+    other_devices:
+      name: "Autres équipements"
+      selector:
+        entity:
+          domain:
+          - switch
+          multiple: true
+      default: []
+    send_command:
+      name: "Commande à envoyer (ex: contrôle thermopompe)"
+      selector:
+        text:
 triggers:
   - platform: state
     entity_id: sensor.defi_hilo
@@ -89,12 +94,16 @@ variables:
   do_pre_heat: !input do_pre_heat
   thermostats: !input thermostats
   thermostat_temps: !input thermostat_temps
-  thermostat_groups: !input thermostat_groups
-  normal_temp: !input normal_temp
+  reference_temp: !input reference_temp
+  cooling_temp: !input cooling_temp
+  appreciation_reference_temp: !input appreciation_reference_temp
+  appreciation_temp: !input appreciation_temp
   preheat_temp: !input preheat_temp
   challenge_temp: !input challenge_temp
   water_heater: !input water_heater
   bool_ref_water_heater: !input bool_ref_water_heater
+  other_devices: !input other_devices
+  send_command: !input send_command
 action:
   - choose:
       - conditions:
@@ -108,14 +117,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_temps.get(repeat.item, thermostat_groups.get(repeat.item, preheat_temp)) }}"
-          - if:
-              - condition: template
-                value_template: "{{ bool_ref_water_heater }}"
-            then:
-              - service: switch.turn_on
-                target:
-                  entity_id: "{{ water_heater }}"
+                    temperature: "{{ thermostat_temps.get(repeat.item, preheat_temp) }}"
       - conditions:
           - condition: state
             entity_id: sensor.defi_hilo
@@ -127,10 +129,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_temps.get(repeat.item, thermostat_groups.get(repeat.item, challenge_temp)) }}"
-          - service: switch.turn_off
-            target:
-              entity_id: "{{ water_heater }}"
+                    temperature: "{{ thermostat_temps.get(repeat.item, challenge_temp) }}"
       - conditions:
           - condition: state
             entity_id: sensor.defi_hilo
@@ -142,7 +141,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_temps.get(repeat.item, thermostat_groups.get(repeat.item, normal_temp)) }}"
+                    temperature: "{{ thermostat_temps.get(repeat.item, thermostat_temps.get(repeat.item, 21)) }}"
           - if:
               - condition: template
                 value_template: "{{ bool_ref_water_heater }}"
@@ -150,3 +149,10 @@ action:
               - service: switch.turn_on
                 target:
                   entity_id: "{{ water_heater }}"
+          - if:
+              - condition: template
+                value_template: "{{ send_command is not none }}"
+            then:
+              - service: remote.send_command
+                data:
+                  command: "{{ send_command }}"
