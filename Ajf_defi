@@ -26,7 +26,7 @@ blueprint:
       selector:
         boolean: {}
 
-    # Ajout de 15 thermostats avec leur température respective
+    # Sélection des thermostats avec température associée individuellement
     thermostats:
       name: "Thermostats"
       selector:
@@ -39,8 +39,7 @@ blueprint:
       name: "Températures normales par thermostat"
       description: "Définir une température spécifique pour chaque thermostat sélectionné."
       selector:
-        object:
-          multiple: true
+        object: {}
       default: {}
 
     reference_temp:
