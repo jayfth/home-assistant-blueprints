@@ -34,10 +34,9 @@ blueprint:
           multiple: true
     thermostat_temps:
       name: "Températures normales par thermostat"
-      description: "Définir une température normale spécifique par thermostat."
+      description: "Définir une température spécifique pour chaque thermostat."
       selector:
-        object:
-          multiple: true
+        map:
           key:
             type: entity
             domain: climate
@@ -158,7 +157,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_temps[repeat.item] + preheat_temp }}"
+                    temperature: "{{ thermostat_temps.get(repeat.item, 21) + preheat_temp }}"
       - conditions:
           - condition: state
             entity_id: sensor.defi_hilo
@@ -170,7 +169,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_temps[repeat.item] + challenge_temp }}"
+                    temperature: "{{ thermostat_temps.get(repeat.item, 21) + challenge_temp }}"
       - conditions:
           - condition: state
             entity_id: sensor.defi_hilo
@@ -182,7 +181,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_temps[repeat.item] }}"
+                    temperature: "{{ thermostat_temps.get(repeat.item, 21) }}"
           - if:
               - condition: template
                 value_template: "{{ bool_ref_water_heater }}"
