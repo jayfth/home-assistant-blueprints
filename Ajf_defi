@@ -36,16 +36,8 @@ blueprint:
       name: "Températures normales par thermostat"
       description: "Définir une température spécifique pour chaque thermostat."
       selector:
-        map:
-          key:
-            type: entity
-            domain: climate
-          value:
-            type: number
-            min: 15
-            max: 25
-            step: 0.5
-            unit_of_measurement: "°C"
+        object:
+          multiple: true
       default: {}
     reference_temp:
       name: "Température de référence (+1°C)"
