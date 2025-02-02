@@ -34,7 +34,7 @@ blueprint:
           domain:
           - climate
           multiple: false
-      default: ""
+      default: null
     temp_thermostat_1:
       name: "Température normale - Thermostat 1"
       default: 21
@@ -51,7 +51,7 @@ blueprint:
           domain:
           - climate
           multiple: false
-      default: ""
+      default: null
     temp_thermostat_2:
       name: "Température normale - Thermostat 2"
       default: 21
@@ -68,7 +68,7 @@ blueprint:
           domain:
           - climate
           multiple: false
-      default: ""
+      default: null
     temp_thermostat_3:
       name: "Température normale - Thermostat 3"
       default: 21
@@ -85,7 +85,7 @@ blueprint:
           domain:
           - climate
           multiple: false
-      default: ""
+      default: null
     temp_thermostat_4:
       name: "Température normale - Thermostat 4"
       default: 21
@@ -185,18 +185,26 @@ action:
             entity_id: sensor.defi_hilo
             state: pre_heat
         sequence:
+          - condition: template
+            value_template: "{{ thermostat_1 is not none }}"
           - service: climate.set_temperature
             data:
               entity_id: "{{ thermostat_1 }}"
               temperature: "{{ temp_thermostat_1 + preheat_temp }}"
+          - condition: template
+            value_template: "{{ thermostat_2 is not none }}"
           - service: climate.set_temperature
             data:
               entity_id: "{{ thermostat_2 }}"
               temperature: "{{ temp_thermostat_2 + preheat_temp }}"
+          - condition: template
+            value_template: "{{ thermostat_3 is not none }}"
           - service: climate.set_temperature
             data:
               entity_id: "{{ thermostat_3 }}"
               temperature: "{{ temp_thermostat_3 + preheat_temp }}"
+          - condition: template
+            value_template: "{{ thermostat_4 is not none }}"
           - service: climate.set_temperature
             data:
               entity_id: "{{ thermostat_4 }}"
