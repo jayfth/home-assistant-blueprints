@@ -36,9 +36,7 @@ blueprint:
       name: "Températures normales par thermostat"
       description: "Définir une température normale spécifique par thermostat."
       selector:
-        entity:
-          domain:
-          - climate
+        object:
           multiple: true
       default: {}
     reference_temp:
@@ -151,7 +149,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_temps.get(repeat.item, thermostat_temps.get(repeat.item, 21) + preheat_temp) }}"
+                    temperature: "{{ thermostat_temps.get(repeat.item, 21) + preheat_temp }}"
       - conditions:
           - condition: state
             entity_id: sensor.defi_hilo
@@ -163,7 +161,7 @@ action:
                 - service: climate.set_temperature
                   data:
                     entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_temps.get(repeat.item, thermostat_temps.get(repeat.item, 21) + challenge_temp) }}"
+                    temperature: "{{ thermostat_temps.get(repeat.item, 21) + challenge_temp }}"
       - conditions:
           - condition: state
             entity_id: sensor.defi_hilo
