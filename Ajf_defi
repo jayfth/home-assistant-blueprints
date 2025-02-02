@@ -25,14 +25,15 @@ blueprint:
       default: true
       selector:
         boolean: {}
-    thermostats:
-      name: "Thermostats"
+    thermostat_1:
+      name: "Thermostat 1"
       selector:
         entity:
           domain:
           - climate
-          multiple: true
-    thermostat_1:
+          multiple: false
+      default: ""
+    temp_thermostat_1:
       name: "Température normale - Thermostat 1"
       default: 21
       selector:
@@ -42,6 +43,14 @@ blueprint:
           step: 0.5
           unit_of_measurement: "°C"
     thermostat_2:
+      name: "Thermostat 2"
+      selector:
+        entity:
+          domain:
+          - climate
+          multiple: false
+      default: ""
+    temp_thermostat_2:
       name: "Température normale - Thermostat 2"
       default: 21
       selector:
@@ -51,6 +60,14 @@ blueprint:
           step: 0.5
           unit_of_measurement: "°C"
     thermostat_3:
+      name: "Thermostat 3"
+      selector:
+        entity:
+          domain:
+          - climate
+          multiple: false
+      default: ""
+    temp_thermostat_3:
       name: "Température normale - Thermostat 3"
       default: 21
       selector:
@@ -60,6 +77,14 @@ blueprint:
           step: 0.5
           unit_of_measurement: "°C"
     thermostat_4:
+      name: "Thermostat 4"
+      selector:
+        entity:
+          domain:
+          - climate
+          multiple: false
+      default: ""
+    temp_thermostat_4:
       name: "Température normale - Thermostat 4"
       default: 21
       selector:
@@ -153,7 +178,6 @@ triggers:
     entity_id: sensor.defi_hilo
 variables:
   do_pre_heat: !input do_pre_heat
-  thermostats: !input thermostats
   reference_temp: !input reference_temp
   cooling_temp: !input cooling_temp
   appreciation_reference_temp: !input appreciation_reference_temp
@@ -171,22 +195,19 @@ action:
             entity_id: sensor.defi_hilo
             state: pre_heat
         sequence:
-          - repeat:
-              for_each: "{{ thermostats }}"
-              sequence:
-                - service: climate.set_temperature
-                  data:
-                    entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_1 if repeat.index == 1 else thermostat_2 if repeat.index == 2 else thermostat_3 if repeat.index == 3 else thermostat_4 }}"
-      - conditions:
-          - condition: state
-            entity_id: sensor.defi_hilo
-            state: reduction
-        sequence:
-          - repeat:
-              for_each: "{{ thermostats }}"
-              sequence:
-                - service: climate.set_temperature
-                  data:
-                    entity_id: "{{ repeat.item }}"
-                    temperature: "{{ thermostat_1 + challenge_temp if repeat.index == 1 else thermostat_2 + challenge_temp if repeat.index == 2 else thermostat_3 + challenge_temp if repeat.index == 3 else thermostat_4 + challenge_temp }}"
+          - service: climate.set_temperature
+            data:
+              entity_id: "{{ thermostat_1 }}"
+              temperature: "{{ temp_thermostat_1 + preheat_temp }}"
+          - service: climate.set_temperature
+            data:
+              entity_id: "{{ thermostat_2 }}"
+              temperature: "{{ temp_thermostat_2 + preheat_temp }}"
+          - service: climate.set_temperature
+            data:
+              entity_id: "{{ thermostat_3 }}"
+              temperature: "{{ temp_thermostat_3 + preheat_temp }}"
+          - service: climate.set_temperature
+            data:
+              entity_id: "{{ thermostat_4 }}"
+              temperature: "{{ temp_thermostat_4 + preheat_temp }}"
